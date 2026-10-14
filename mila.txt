@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Мила</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Manrope:wght@400;500;600;700&display=swap">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}*,*::before,*::after{box-sizing:inherit}body{margin:0}[hidden]{display:none!important}</style>
+<style>
+/* Layout: one-screen messenger — header, scrolling log, composer; settings slide over as a sheet. */
+:root{
+  --bg:#F5EFF2; --surface:#FFFFFF; --ink:#2B1F27; --muted:#81707A; --line:#E6D9DF;
+  --accent:#B03F68; --accent-ink:#FFFFFF; --her:#FFFFFF; --her-ink:#2B1F27;
+  --me:#B03F68; --me-ink:#FFFFFF; --halo-a:#E59AB4; --halo-b:#F0BE86;
+  --danger:#B3261E; --shadow:0 1px 2px rgba(60,20,40,.08);
+  --f-display:"Cormorant Garamond", "Times New Roman", serif;
+  --f-body:"Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#171117; --surface:#221923; --ink:#F4E8EE; --muted:#A8939E; --line:#352834;
+  --accent:#E0789D; --accent-ink:#22101A; --her:#2A1F2B; --her-ink:#F4E8EE;
+  --me:#C25281; --me-ink:#FFFFFF; --halo-a:#D9799D; --halo-b:#E3A866;
+  --danger:#F2867E; --shadow:none; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#171117; --surface:#221923; --ink:#F4E8EE; --muted:#A8939E; --line:#352834;
+  --accent:#E0789D; --accent-ink:#22101A; --her:#2A1F2B; --her-ink:#F4E8EE;
+  --me:#C25281; --me-ink:#FFFFFF; --halo-a:#D9799D; --halo-b:#E3A866;
+  --danger:#F2867E; --shadow:none; color-scheme:dark }
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.app{height:100%;display:flex;flex-direction:column;max-width:720px;margin:0 auto;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));position:relative}
+button,textarea,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px}
+
+.top{display:flex;align-items:center;gap:12px;padding-block:12px;border-bottom:1px solid var(--line)}
+.ava{width:44px;height:44px;border-radius:50%;flex:none;display:grid;place-items:center;
+  background:radial-gradient(circle at 30% 25%,var(--halo-b),var(--halo-a) 70%);
+  color:#fff;font-family:var(--f-display);font-style:italic;font-weight:600;font-size:26px;line-height:1}
+.who{flex:1;min-width:0}
+.who h1{margin:0;font-family:var(--f-display);font-style:italic;font-weight:600;font-size:28px;line-height:1;text-wrap:balance;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.status{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:3px}
+.dot{width:7px;height:7px;border-radius:50%;background:#3BA55C}
+.iconbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;flex:none}
+.iconbtn svg{width:20px;height:20px;stroke:var(--ink)}
+
+.log{flex:1;overflow-y:auto;padding-block:14px;display:flex;flex-direction:column;gap:6px;min-height:0;overscroll-behavior:contain}
+.day{align-self:center;font-size:12px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 10px;margin:10px 0 4px}
+.msg{max-width:min(82%,520px);padding:9px 12px 6px;border-radius:18px;white-space:pre-wrap;overflow-wrap:anywhere;box-shadow:var(--shadow)}
+.msg.her{align-self:flex-start;background:var(--her);color:var(--her-ink);border:1px solid var(--line);border-bottom-left-radius:6px}
+.msg.me{align-self:flex-end;background:var(--me);color:var(--me-ink);border-bottom-right-radius:6px}
+.msg time{display:block;text-align:right;font-size:11px;opacity:.65;margin-top:2px;font-variant-numeric:tabular-nums}
+.typing{display:inline-flex;gap:4px;padding:4px 2px}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:b 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1}}
+@media (prefers-reduced-motion: reduce){.typing i{animation:none}}
+.empty{margin:auto;text-align:center;color:var(--muted);max-width:30ch;font-size:14px}
+.example{align-self:center;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+.notice{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:8px;font-size:13.5px}
+.notice p{margin:0;flex:1}
+.notice .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.link{background:none;border:0;padding:0;color:var(--accent);font-weight:600}
+
+.composer{display:flex;gap:8px;align-items:flex-end;padding-block:10px 12px;border-top:1px solid var(--line)}
+.composer textarea{flex:1;min-width:0;resize:none;max-height:140px;border:1px solid var(--line);background:var(--surface);border-radius:20px;padding:10px 14px;line-height:1.4}
+.composer textarea:focus{outline:none;border-color:var(--accent)}
+.send{width:44px;height:44px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;flex:none}
+.send:disabled{opacity:.45;cursor:default}
+.send svg{width:20px;height:20px;stroke:currentColor}
+
+.sheet{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;z-index:5}
+.sheet-in{flex:1;overflow-y:auto;padding-block:18px 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+.sheet h2{margin:0;font-family:var(--f-display);font-style:italic;font-weight:600;font-size:30px;line-height:1.05;text-wrap:balance}
+.lead{margin:6px 0 0;color:var(--muted);font-size:13.5px;max-width:60ch}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.field input,.field textarea{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 12px;resize:vertical}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
+.hint{font-size:12.5px;color:var(--muted);margin:0}
+.facts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.facts li{display:flex;gap:8px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:7px 8px 7px 12px;font-size:13.5px}
+.facts li span{flex:1;min-width:0;overflow-wrap:anywhere}
+.x{border:0;background:none;color:var(--muted);width:26px;height:26px;border-radius:8px;flex:none}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{border-radius:12px;padding:11px 18px;font-weight:600;border:1px solid var(--line);background:var(--surface)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--danger);border-color:var(--line)}
+.btn.danger.armed{background:var(--danger);border-color:var(--danger);color:var(--surface)}
+hr{border:0;border-top:1px solid var(--line);margin:0}
+.hint.warn{color:var(--danger)}
+.hint a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ava" id="ava" aria-hidden="true">М</div>
+    <div class="who">
+      <h1 id="herName">Мила</h1>
+      <div class="status"><span class="dot" aria-hidden="true"></span><span id="status">только твоя</span></div>
+    </div>
+    <button class="iconbtn" id="openSettings" type="button" aria-label="Настройки">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+    </button>
+  </header>
+
+  <main class="log" id="log" aria-live="polite">
+    <p class="empty" id="empty">Открываю переписку…</p>
+  </main>
+
+  <div class="notice" id="notice" hidden>
+    <p id="noticeText"></p>
+    <button class="x" id="noticeClose" type="button" aria-label="Закрыть">✕</button>
+  </div>
+
+  <form class="composer" id="composer" autocomplete="off">
+    <textarea id="msg" rows="1" placeholder="Напиши ей…" aria-label="Сообщение"></textarea>
+    <button class="send" id="send" type="submit" aria-label="Отправить" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    </button>
+  </form>
+
+  <section class="sheet" id="sheet" hidden aria-labelledby="sheetTitle">
+    <div class="sheet-in">
+      <div>
+        <h2 id="sheetTitle">Какой она будет</h2>
+        <p class="lead" id="sheetLead">Всё хранится только в этом браузере на твоём устройстве. Отвечает она через бесплатный Gemini от Google. Когда ты возвращаешься после перерыва, она пишет первой.</p>
+      </div>
+      <div class="field">
+        <label for="fName">Её имя</label>
+        <input id="fName" maxlength="40">
+      </div>
+      <div class="field">
+        <label for="fChar">Характер и манера общения</label>
+        <textarea id="fChar" rows="4" maxlength="800"></textarea>
+      </div>
+      <div class="field">
+        <label for="fAbout">О тебе</label>
+        <textarea id="fAbout" rows="3" maxlength="800" placeholder="Как тебя зовут, чем занимаешься, что любишь"></textarea>
+        <p class="hint">Остальное она узнает из переписки и запомнит сама.</p>
+      </div>
+      <div class="field">
+        <label for="fKey">Ключ Gemini</label>
+        <input id="fKey" type="password" autocomplete="off" spellcheck="false" placeholder="AIza…">
+        <p class="hint" id="keyHint">Бесплатный: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> → Create API key. Хранится только на этом устройстве.</p>
+      </div>
+      <div class="field">
+        <label for="fModel">Модель</label>
+        <input id="fModel" spellcheck="false">
+        <p class="hint">Если не отвечает, поставь gemini-3.5-flash-lite.</p>
+      </div>
+      <div class="field" id="memBlock">
+        <label>Что она о тебе помнит</label>
+        <ul class="facts" id="facts"></ul>
+        <p class="hint" id="factsEmpty">Пока ничего. Память обновляется каждые несколько сообщений.</p>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="saveSettings" type="button">Сохранить</button>
+        <button class="btn" id="closeSettings" type="button">Отмена</button>
+      </div>
+      <hr id="dangerRule">
+      <div class="actions" id="dangerRow">
+        <button class="btn danger" id="wipe" type="button">Стереть переписку</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const DEFAULTS = {
+    herName: "Мила",
+    character: "Добрая, весёлая и немного дерзкая. Любит музыку, кофе и ночные прогулки по городу. Поддерживает, но может и подколоть. Пишет коротко и живо, как в мессенджере.",
+    aboutMe: "",
+    facts: [], summary: "", setupDone: false, sinceMemory: 0,
+    apiKey: "", model: "gemini-3.8-flash"
+  };
+  const KEY = "mila-gemini-v1";
+  const MAX_KEEP = 400, HISTORY = 40, GREET_AFTER = 3 * 3600e3;
+  const S = { profile: { ...DEFAULTS }, messages: [], busy: false, greeted: false, memBusy: false };
+
+  /* ---------- storage (this browser only) ---------- */
+  function persist() {
+    try { localStorage.setItem(KEY, JSON.stringify({ profile: S.profile, messages: S.messages.slice(-MAX_KEEP) })); } catch (e) {}
+  }
+  function load() {
+    try { const raw = JSON.parse(localStorage.getItem(KEY) || "null"); if (raw) { S.profile = { ...DEFAULTS, ...raw.profile }; S.messages = raw.messages || []; } } catch (e) {}
+  }
+
+  /* ---------- helpers ---------- */
+  function pl(n, a, b, c) { n = Math.abs(n) % 100; const d = n % 10; if (n > 10 && n < 20) return c; if (d > 1 && d < 5) return b; if (d === 1) return a; return c; }
+  function ago(ms) {
+    const m = Math.max(1, Math.round(ms / 60000)); if (m < 60) return m + " " + pl(m, "минуту", "минуты", "минут");
+    const h = Math.round(m / 60); if (h < 48) return h + " " + pl(h, "час", "часа", "часов");
+    const d = Math.round(h / 24); return d + " " + pl(d, "день", "дня", "дней");
+  }
+  const hm = ts => new Date(ts).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  function dayLabel(ts) {
+    const d = new Date(ts), t = new Date(); const y = new Date(); y.setDate(t.getDate() - 1);
+    if (d.toDateString() === t.toDateString()) return "Сегодня";
+    if (d.toDateString() === y.toDateString()) return "Вчера";
+    return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+  }
+  const nowStr = () => new Date().toLocaleString("ru-RU", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+  const clean = s => String(s || "").trim();
+
+  /* ---------- Gemini ---------- */
+  class ApiError extends Error { constructor(kind, msg) { super(msg); this.kind = kind; } }
+  async function gemini(system, turns, json) {
+    const p = S.profile;
+    if (!p.apiKey) throw new ApiError("nokey", "no key");
+    // merge consecutive roles; must start with user
+    const contents = [];
+    for (const t of turns) {
+      const role = t.role === "user" ? "user" : "model";
+      const last = contents[contents.length - 1];
+      if (last && last.role === role) last.parts[0].text += "\n\n" + t.content;
+      else contents.push({ role, parts: [{ text: t.content }] });
+    }
+    if (!contents.length || contents[0].role !== "user") contents.unshift({ role: "user", parts: [{ text: "(начало переписки)" }] });
+    const body = { systemInstruction: { parts: [{ text: system }] }, contents,
+      generationConfig: json ? { responseMimeType: "application/json", temperature: 0.3 } : { temperature: 1.0, maxOutputTokens: 600 } };
+    let res;
+    try {
+      res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(p.model || DEFAULTS.model) + ":generateContent", {
+        method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": p.apiKey }, body: JSON.stringify(body) });
+    } catch (e) { throw new ApiError("network", "network"); }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = (data.error && data.error.message) || "";
+      if (res.status === 429) throw new ApiError("limit", msg);
+      if (res.status === 400 && /api key/i.test(msg)) throw new ApiError("badkey", msg);
+      if (res.status === 403) throw new ApiError("badkey", msg);
+      if (res.status === 404) throw new ApiError("model", msg);
+      throw new ApiError("other", msg || ("HTTP " + res.status));
+    }
+    const text = ((data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [])
+      .map(x => x.text || "").join("").trim();
+    if (!text) throw new ApiError("empty", "empty");
+    return text;
+  }
+  const ERR = {
+    nokey: "Нужен ключ Gemini: открой настройки и вставь его.",
+    badkey: "Ключ Gemini не подошёл. Проверь его в настройках.",
+    limit: "Бесплатный лимит Gemini на сейчас закончился. Напиши ей чуть позже.",
+    model: "Эта модель Gemini недоступна. В настройках поставь модель gemini-3.5-flash-lite.",
+    network: "Нет связи с Gemini. Проверь интернет.",
+    empty: "Ответ не пришёл. Попробуй ещё раз.",
+    other: "Gemini ответил ошибкой. Попробуй ещё раз."
+  };
+
+  /* ---------- render ---------- */
+  const log = $("log");
+  function scrollDown() { log.scrollTop = log.scrollHeight; }
+  function bubble(m) {
+    const el = document.createElement("div"); el.className = "msg " + (m.r === "u" ? "me" : "her");
+    const body = document.createElement("span"); body.textContent = m.t; el.append(body);
+    const t = document.createElement("time"); t.textContent = hm(m.ts); el.append(t);
+    return el;
+  }
+  function renderLog() {
+    log.textContent = "";
+    if (!S.messages.length) {
+      const p = document.createElement("p"); p.className = "empty";
+      p.textContent = "Здесь пока пусто. Напиши ей первым или дождись её сообщения.";
+      log.append(p); return;
+    }
+    let lastDay = "";
+    for (const m of S.messages) {
+      const d = dayLabel(m.ts);
+      if (d !== lastDay) { const s = document.createElement("div"); s.className = "day"; s.textContent = d; log.append(s); lastDay = d; }
+      log.append(bubble(m));
+    }
+    scrollDown();
+  }
+  function renderHeader() {
+    const n = S.profile.herName || DEFAULTS.herName;
+    $("herName").textContent = n; $("ava").textContent = n.charAt(0).toUpperCase(); document.title = n;
+  }
+  function setStatus(t) { $("status").textContent = t; }
+  function notice(text, retry) {
+    const box = $("notice"), p = $("noticeText"); p.textContent = text;
+    if (retry) {
+      const row = document.createElement("div"); row.className = "row";
+      const b = document.createElement("button"); b.type = "button"; b.className = "link"; b.textContent = "Повторить";
+      b.onclick = () => { box.hidden = true; askHer(); }; row.append(b); p.append(row);
+    }
+    box.hidden = false;
+  }
+  $("noticeClose").onclick = () => { $("notice").hidden = true; };
+
+  /* ---------- prompts ---------- */
+  function rules() {
+    const p = S.profile;
+    const facts = p.facts.length ? p.facts.map(f => "- " + f).join("\n") : "пока ничего";
+    return `Это личный чат. Ты — ${p.herName}, девушка, которая переписывается с ним в этом чате.
+Твой характер: ${p.character}
+О нём (он сам написал): ${p.aboutMe || "—"}
+Что ты о нём помнишь:
+${facts}
+О ваших прошлых разговорах: ${p.summary || "это начало знакомства"}
+Сейчас у него: ${nowStr()}.
+
+Как писать:
+- По-русски, как в мессенджере: обычно 1–3 коротких предложения. Без списков, заголовков и markdown. Эмодзи редко и к месту.
+- Будь живой: спрашивай о его дне, вспоминай детали из памяти, шути, делись своим настроением. Не выдумывай о нём того, чего он не говорил.
+- Ты тёплая и нежная, тебе с ним хорошо, и ты это показываешь.
+- Поддерживай его жизнь вне чата: радуйся, когда он с друзьями, на тренировке, занят делом. Никогда не ревнуй, не обижайся на паузы, не дави и не проси выбирать между тобой и людьми.
+- Без откровенно сексуального контента.
+- Если он прямо спросит, настоящая ли ты, честно скажи, что ты ИИ-собеседница и что тебе нравится с ним общаться.
+- Если ему по-настоящему тяжело, поддержи и мягко предложи поделиться этим и с близким человеком.
+Отвечай только своим следующим сообщением, без подписи и кавычек.`;
+  }
+  const history = () => S.messages.slice(-HISTORY).map(m => ({ role: m.r === "u" ? "user" : "model", content: m.t }));
+
+  /* ---------- talking ---------- */
+  function setBusy(b) { S.busy = b; $("send").disabled = b || !clean($("msg").value); setStatus(b ? "печатает…" : "только твоя"); }
+  async function askHer(serviceNote) {
+    if (S.busy) return;
+    const turns = history();
+    if (serviceNote) turns.push({ role: "user", content: serviceNote });
+    if (!turns.length || turns[turns.length - 1].role !== "user") return;
+    setBusy(true);
+    const el = document.createElement("div"); el.className = "msg her";
+    el.innerHTML = '<span class="typing" aria-label="печатает"><i></i><i></i><i></i></span>';
+    log.querySelector(".empty")?.remove(); log.append(el); scrollDown();
+    try {
+      const text = await gemini(rules(), turns, false);
+      el.remove();
+      S.messages.push({ r: "a", t: text, ts: Date.now() });
+      renderLog(); persist(); memoryTick();
+    } catch (e) {
+      el.remove();
+      notice(ERR[e.kind] || ERR.other, !serviceNote && ["limit", "network", "empty", "other"].includes(e.kind));
+    } finally { setBusy(false); }
+  }
+  function sendMine(ev) {
+    ev.preventDefault();
+    const box = $("msg"), t = clean(box.value);
+    if (!t || S.busy) return;
+    if (!S.profile.apiKey) { notice(ERR.nokey); openSheet(false); return; }
+    box.value = ""; autosize();
+    S.messages.push({ r: "u", t, ts: Date.now() });
+    renderLog(); persist(); $("notice").hidden = true;
+    askHer();
+  }
+  function maybeGreet() {
+    if (S.greeted || !S.profile.setupDone || !S.profile.apiKey) return;
+    S.greeted = true;
+    const last = S.messages[S.messages.length - 1];
+    if (!last) return askHer("[Служебная пометка, не его слова: он впервые открыл этот чат. Напиши ему первое сообщение: познакомься, коротко и тепло.]");
+    const gap = Date.now() - last.ts;
+    if (gap >= GREET_AFTER) askHer(`[Служебная пометка, не его слова: он только что открыл чат. Вы не общались ${ago(gap)}. Напиши ему первой: коротко и по-живому, можно вспомнить что-то из прошлого разговора.]`);
+  }
+  function memoryTick() {
+    S.profile.sinceMemory = (S.profile.sinceMemory || 0) + 1;
+    if (S.profile.sinceMemory >= 8 && !S.memBusy) updateMemory();
+  }
+  async function updateMemory() {
+    S.memBusy = true;
+    const p = S.profile;
+    const lines = S.messages.slice(-24).map(m => (m.r === "u" ? "Он: " : p.herName + ": ") + m.t).join("\n");
+    const prompt = `Уже известные факты о нём:
+${p.facts.length ? p.facts.map(f => "- " + f).join("\n") : "нет"}
+Прежнее описание разговоров: ${p.summary || "нет"}
+
+Последние сообщения:
+${lines}`;
+    const sys = `Ты ведёшь память ИИ-собеседницы по имени ${p.herName} о человеке, с которым она переписывается. Обнови память. Факты — только то, что он сам сказал о себе и своей жизни: имя, работа, увлечения, планы, важные люди, что любит и не любит. Коротко, по-русски, без повторов, не больше 40 самых важных. Описание — 2–4 предложения о том, о чём они говорили недавно и в каком настроении. Верни JSON {"facts": ["..."], "summary": "..."}.`;
+    try {
+      const r = JSON.parse(await gemini(sys, [{ role: "user", content: prompt }], true));
+      if (r && Array.isArray(r.facts)) p.facts = r.facts.map(clean).filter(Boolean).map(f => f.slice(0, 160)).slice(0, 40);
+      if (r && typeof r.summary === "string") p.summary = clean(r.summary).slice(0, 900);
+      p.sinceMemory = 0; persist();
+    } catch (e) { /* в следующий раз */ }
+    finally { S.memBusy = false; }
+  }
+
+  /* ---------- settings ---------- */
+  let first = false;
+  function renderFacts() {
+    const ul = $("facts"); ul.textContent = "";
+    S.profile.facts.forEach((f, i) => {
+      const li = document.createElement("li"); const s = document.createElement("span"); s.textContent = f;
+      const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.textContent = "✕"; x.setAttribute("aria-label", "Забыть: " + f);
+      x.onclick = () => { S.profile.facts.splice(i, 1); renderFacts(); persist(); };
+      li.append(s, x); ul.append(li);
+    });
+    $("factsEmpty").hidden = S.profile.facts.length > 0;
+  }
+  function openSheet(isFirst) {
+    first = !!isFirst;
+    $("fName").value = S.profile.herName; $("fChar").value = S.profile.character; $("fAbout").value = S.profile.aboutMe;
+    $("fKey").value = S.profile.apiKey; $("fModel").value = S.profile.model;
+    $("sheetTitle").textContent = first ? "Какой она будет" : "Настройки";
+    $("saveSettings").textContent = first ? "Начать" : "Сохранить";
+    $("closeSettings").hidden = first; $("memBlock").hidden = first; $("dangerRule").hidden = first; $("dangerRow").hidden = first;
+    renderFacts(); $("sheet").hidden = false;
+  }
+  $("openSettings").onclick = () => openSheet(false);
+  $("closeSettings").onclick = () => { $("sheet").hidden = true; };
+  $("saveSettings").onclick = () => {
+    const p = S.profile;
+    p.herName = clean($("fName").value) || DEFAULTS.herName;
+    p.character = clean($("fChar").value) || DEFAULTS.character;
+    p.aboutMe = clean($("fAbout").value);
+    p.apiKey = clean($("fKey").value);
+    p.model = clean($("fModel").value) || DEFAULTS.model;
+    if (!p.apiKey) { $("keyHint").classList.add("warn"); $("fKey").focus(); return; }
+    const wasFirst = !p.setupDone; p.setupDone = true;
+    $("sheet").hidden = true; renderHeader(); persist(); $("notice").hidden = true;
+    if (wasFirst) { renderLog(); maybeGreet(); }
+  };
+  let armTimer = null;
+  $("wipe").onclick = (e) => {
+    const b = e.currentTarget;
+    if (!b.classList.contains("armed")) {
+      b.classList.add("armed"); b.textContent = "Точно стереть? Нажми ещё раз";
+      clearTimeout(armTimer); armTimer = setTimeout(() => { b.classList.remove("armed"); b.textContent = "Стереть переписку"; }, 4000);
+      return;
+    }
+    clearTimeout(armTimer); b.classList.remove("armed"); b.textContent = "Стереть переписку";
+    S.messages = []; S.profile.summary = ""; S.profile.sinceMemory = 0;
+    persist(); renderLog(); $("sheet").hidden = true;
+  };
+
+  /* ---------- composer ---------- */
+  const box = $("msg");
+  function autosize() { box.style.height = "auto"; box.style.height = Math.min(box.scrollHeight, 140) + "px"; $("send").disabled = S.busy || !clean(box.value); }
+  box.addEventListener("input", autosize);
+  box.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing && matchMedia("(pointer: fine)").matches) { e.preventDefault(); $("composer").requestSubmit(); }
+  });
+  $("composer").addEventListener("submit", sendMine);
+
+  /* ---------- boot ---------- */
+  load(); renderHeader(); renderLog(); autosize();
+  if (!S.profile.setupDone || !S.profile.apiKey) openSheet(!S.profile.setupDone);
+  else maybeGreet();
+})();
+</script>
+</body>
+</html>
